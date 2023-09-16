@@ -1,9 +1,33 @@
 #include<iostream>
 #include<unistd.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 #include<vector>
 #include<string>
 #include<sstream>
 #include <cstring>
+#include <time.h>
+
+char** getCommandArgs(std::string command_line);
+void execute(char** args);
+
+int main()
+{
+    std::cout << "***************** Welcome to Mendunix-Terminal v1.0 *****************" << std::endl;
+    std::cout << "Documentation: https://github.com/ImNotMenduina/Mendunix-Terminal-OS" << std::endl;   
+
+    while(1)
+    {
+        std::string command_line;
+        std::getline(std::cin, command_line);
+        char** args = getCommandArgs(command_line);
+
+        execute(args);
+        //execvp(args[0], args);
+    }
+
+    return 0;
+}
 
 char** getCommandArgs(std::string command_line)
 {   
@@ -37,19 +61,29 @@ char** getCommandArgs(std::string command_line)
     return &arr[0]; // return the first addr 
 }
 
-int main()
+void execute(char** args)
 {
-    //getCommandsAvaiables();
+    pid_t id;
+    int status;
 
-    //getCommandsArgs()
+    if(strcmp(args[0], "q") == 0)
+        exit(0);
 
-    std::string command_line;
-    std::getline(std::cin, command_line);
-
-    char** args = getCommandArgs(command_line);
-
-    execvp("ls", args);
-
-    return 0;
+    if((id = fork()) < 0)
+    {
+        perror("fork");
+        exit(1);
+    }
+    if(id == 0)
+    {
+        execvp(args[0], args);
+        perror(args[0]);
+        exit(1);
+    }
+    
+    //work in progress....
+    //
+    //
+    while(wait(&status) != id)
+        printf("\n");
 }
-
