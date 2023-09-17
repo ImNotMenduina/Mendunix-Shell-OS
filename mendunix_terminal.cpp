@@ -7,23 +7,49 @@
 #include<sstream>
 #include <cstring>
 #include <time.h>
+#include <unordered_map>
 
 char** getCommandArgs(std::string command_line);
 void execute(char** args);
 
-int main()
+typedef struct 
 {
-    std::cout << "***************** Welcome to Mendunix-Terminal v1.0 *****************" << std::endl;
-    std::cout << "Documentation: https://github.com/ImNotMenduina/Mendunix-Terminal-OS" << std::endl;   
+    std::string name;
+    std::string description; 
+    std::string usage;
+} Command;
+
+static Command commands_description[] = {
+    {
+        "mendunix-help",
+        "Command to help you to know all the things Mendunix-Terminal can do for you.",
+        "Use help <command name> to know more about a specific command."},
+
+    {
+        "mendunix-exit",
+        "Command to exit Mendunix-Terminal.",
+        "Use exit to exit Mendunix-Terminal."
+    }
+};
+
+std::unordered_map<std::string, Command> src = {
+    {"mendunix-help", commands_description[0]}, 
+    {"mendunix-exit", commands_description[1]}
+};
+
+int main(int argv, char* argc[])
+{
+    std::cout << "====== Welcome to Mendunix-Terminal v1.0 ======" << std::endl;
+    std::cout << "* Documentation: https://github.com/ImNotMenduina/Mendunix-Terminal-OS *" << std::endl;   
 
     while(1)
     {
         std::string command_line;
+        std::cout << "/> ";
         std::getline(std::cin, command_line);
         char** args = getCommandArgs(command_line);
 
         execute(args);
-        //execvp(args[0], args);
     }
 
     return 0;
@@ -63,27 +89,45 @@ char** getCommandArgs(std::string command_line)
 
 void execute(char** args)
 {
-    pid_t id;
+    pid_t id, w;
     int status;
 
-    if(strcmp(args[0], "q") == 0)
-        exit(0);
-
-    if((id = fork()) < 0)
-    {
-        perror("fork");
-        exit(1);
+    if(strcmp(args[0], "mendunix-exit") == 0)
+    {   
+        std::cout << "====== BYE BYE ======" << std::endl;
+        exit(EXIT_SUCCESS);
     }
-    if(id == 0)
+    else if(strcmp(args[0], "mendunix-help") == 0)
     {
-        execvp(args[0], args);
-        perror(args[0]);
-        exit(1);
+        for(auto& p: src)
+        {
+            std::cout << "====== COMMAND //> " << p.second.name << " ======" << std::endl;
+            std::cout << "Description: " << p.second.description << std::endl;
+            std::cout << "Usage: " << p.second.usage << std::endl;
+            std::cout << std::endl;
+        }
     }
-    
-    //work in progress....
-    //
-    //
-    while(wait(&status) != id)
-        printf("\n");
+    else 
+    {
+        //Creates a new process. 
+        //The new process (the child process) is an exact duplicate of the process that calls fork().
+        id = fork();
+        if(id < 0)
+        {
+            perror("Error creating process");
+            exit(EXIT_FAILURE);
+        }
+        if(id == 0)
+        {
+            execvp(args[0], args);
+            perror(args[0]);
+            exit(EXIT_SUCCESS);
+        }
+        else
+        {
+            waitpid(id, &status, WUNTRACED | WCONTINUED); 
+            //Suspends the calling process until a child process ends or is stopped. 
+            //More precisely, waitpid() suspends the calling process until the system gets status information on the child
+        }
+    }
 }
